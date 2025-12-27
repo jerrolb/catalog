@@ -109,6 +109,71 @@ rpc
 
     return c.json({ products: result, total: totalCount.count });
   })
+  .get('/products/search', async (c) => {
+    const query = c.req.query('q') || '';
+    const limit = parseInt(c.req.query('limit') || '30');
+    const offset = parseInt(c.req.query('offset') || '0');
+
+    if (!query.trim()) {
+      // If no query, return all products
+      const totalCount = db.prepare('SELECT COUNT(*) as count FROM products').get() as { count: number };
+      const products = db.prepare(`
+        SELECT * FROM products
+        ORDER BY createdAt DESC
+        LIMIT ? OFFSET ?
+      `).all(limit, offset) as any[];
+
+      const result: Product[] = products.map((p) => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        category: p.category,
+        price: p.price,
+        stock: p.stock,
+        brand: p.brand,
+        sku: p.sku,
+        weight: p.weight,
+        meta: {
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+        },
+      }));
+
+      return c.json({ products: result, total: totalCount.count });
+    }
+
+    // Search by title or description (case-insensitive substring match)
+    const searchQuery = `%${query}%`;
+    const totalCount = db.prepare(`
+      SELECT COUNT(*) as count FROM products
+      WHERE LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)
+    `).get(searchQuery, searchQuery) as { count: number };
+
+    const products = db.prepare(`
+      SELECT * FROM products
+      WHERE LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)
+      ORDER BY createdAt DESC
+      LIMIT ? OFFSET ?
+    `).all(searchQuery, searchQuery, limit, offset) as any[];
+
+    const result: Product[] = products.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      category: p.category,
+      price: p.price,
+      stock: p.stock,
+      brand: p.brand,
+      sku: p.sku,
+      weight: p.weight,
+      meta: {
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      },
+    }));
+
+    return c.json({ products: result, total: totalCount.count });
+  })
   .get('/products/:id', async (c) => {
     const id = parseInt(c.req.param('id'));
     if (isNaN(id)) {

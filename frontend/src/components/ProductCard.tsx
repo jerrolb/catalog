@@ -33,9 +33,11 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Stock:</span>
-              <span className={`font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {product.stock}
-              </span>
+              {product.stock < 10 ? (
+                <span className="font-medium text-red-600">Low stock ({product.stock})</span>
+              ) : (
+                <span className="font-medium text-green-600">{product.stock}</span>
+              )}
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Weight:</span>

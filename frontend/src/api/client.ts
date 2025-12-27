@@ -53,3 +53,12 @@ export async function deleteProduct(id: number): Promise<void> {
     throw new Error(error.error || 'Failed to delete product');
   }
 }
+
+export async function searchProducts(query: string, limit = 30, offset = 0): Promise<{ products: Product[]; total: number }> {
+  // @ts-expect-error - Hono RPC type inference issue, but works at runtime
+  const res = await api.products.search.$get({ query: { q: query, limit: limit.toString(), offset: offset.toString() } });
+  if (!res.ok) {
+    throw new Error('Failed to search products');
+  }
+  return res.json();
+}
