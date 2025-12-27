@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { db } from '../db/index.js';
-import type { Product, CreateProductInput } from '../types.js';
+import { db } from './db/index.js';
+import type { Product, CreateProductInput } from './types.js';
+
+// Create RPC app
+const rpc = new Hono();
 
 // Input validation schemas
 const createProductSchema = z.object({
@@ -15,12 +18,13 @@ const createProductSchema = z.object({
   weight: z.number().nonnegative(),
 });
 
-const products = new Hono()
-  .post('/', async (c) => {
+// RPC route handlers with proper typing
+rpc
+  .post('/products', async (c) => {
     try {
       const body = await c.req.json<CreateProductInput>();
 
-      // Validate required fields
+      // Validate input
       const validation = createProductSchema.safeParse(body);
       if (!validation.success) {
         return c.json({ error: 'Validation failed', details: validation.error.errors }, 400);
@@ -65,7 +69,7 @@ const products = new Hono()
         },
       };
 
-      return c.json(response, 201);
+      return c.json(response);
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return c.json({ error: 'Product with this SKU already exists' }, 409);
@@ -74,7 +78,7 @@ const products = new Hono()
       return c.json({ error: 'Internal server error' }, 500);
     }
   })
-  .get('/', async (c) => {
+  .get('/products', async (c) => {
     const limit = parseInt(c.req.query('limit') || '30');
     const offset = parseInt(c.req.query('offset') || '0');
 
@@ -102,7 +106,7 @@ const products = new Hono()
 
     return c.json(result);
   })
-  .get('/:id', async (c) => {
+  .get('/products/:id', async (c) => {
     const id = parseInt(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ error: 'Invalid product ID' }, 400);
@@ -133,4 +137,6 @@ const products = new Hono()
     return c.json(result);
   });
 
-export default products;
+export { rpc };
+export type AppType = typeof rpc;
+
