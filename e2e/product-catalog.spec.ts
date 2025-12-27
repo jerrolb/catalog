@@ -24,12 +24,14 @@ test.describe('Product Catalog E2E Tests', () => {
     // Wait for modal to appear
     await expect(page.locator('text=Add New Product')).toBeVisible();
     
-    // Fill in the form
-    await page.fill('input[name="title"]', 'E2E Test Product');
+    // Fill in the form with unique values
+    const timestamp = Date.now();
+    const productTitle = `E2E Test Product ${timestamp}`;
+    await page.fill('input[name="title"]', productTitle);
     await page.fill('textarea[name="description"]', 'This is a test product created by E2E tests');
     await page.fill('input[name="category"]', 'e2e-test');
     await page.fill('input[name="brand"]', 'E2E Brand');
-    await page.fill('input[name="sku"]', `E2E-SKU-${Date.now()}`);
+    await page.fill('input[name="sku"]', `E2E-SKU-${timestamp}`);
     await page.fill('input[name="weight"]', '2.5');
     await page.fill('input[name="price"]', '29.99');
     await page.fill('input[name="stock"]', '50');
@@ -38,10 +40,13 @@ test.describe('Product Catalog E2E Tests', () => {
     await page.click('button:has-text("Submit")');
     
     // Wait for modal to close and product to appear
-    await expect(page.locator('text=Add New Product')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Add New Product')).not.toBeVisible({ timeout: 10000 });
+    
+    // Wait for page to refresh
+    await page.waitForTimeout(2000);
     
     // Verify the new product appears in the list
-    await expect(page.locator('text=E2E Test Product')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=${productTitle}`).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should edit an existing product', async ({ page }) => {
@@ -99,45 +104,48 @@ test.describe('Product Catalog E2E Tests', () => {
   });
 
   test('should delete a product', async ({ page }) => {
-    // Wait for products to load
+    // First create a product to delete
+    await page.click('text=Add Product');
+    await expect(page.locator('text=Add New Product')).toBeVisible();
+    
+    const timestamp = Date.now();
+    const productTitle = `E2E Delete Test ${timestamp}`;
+    await page.fill('input[name="title"]', productTitle);
+    await page.fill('textarea[name="description"]', 'Product to be deleted');
+    await page.fill('input[name="category"]', 'e2e-test');
+    await page.fill('input[name="brand"]', 'E2E Brand');
+    await page.fill('input[name="sku"]', `E2E-DELETE-${timestamp}`);
+    await page.fill('input[name="weight"]', '1.0');
+    await page.fill('input[name="price"]', '19.99');
+    await page.fill('input[name="stock"]', '100');
+    
+    await page.click('button:has-text("Submit")');
+    await expect(page.locator('text=Add New Product')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.locator(`text=${productTitle}`).first()).toBeVisible({ timeout: 10000 });
+    
+    // Now delete the product we just created
     const productCards = page.locator('[class*="bg-white rounded-lg shadow-md"]');
-    await expect(productCards.first()).toBeVisible({ timeout: 10000 });
+    const createdProduct = productCards.filter({ hasText: productTitle }).first();
+    await expect(createdProduct).toBeVisible();
     
-    // Get the first product's title
-    const firstProduct = productCards.first();
-    const productTitle = await firstProduct.locator('h3').textContent();
-    
-    // Count initial products
-    const initialCount = await productCards.count();
-    
-    // Click Delete button on first product
-    await firstProduct.locator('button:has-text("Delete")').click();
+    // Click Delete button
+    await createdProduct.locator('button:has-text("Delete")').click();
     
     // Wait for delete confirmation modal
     await expect(page.locator('text=Delete Product')).toBeVisible();
     
-    // Confirm deletion - find the delete button in the modal (not the card button)
+    // Confirm deletion - find the delete button in the modal
     const deleteButton = page.locator('div:has-text("Delete Product")').locator('button:has-text("Delete")').last();
     await deleteButton.click();
     
     // Wait for modal to close
-    await expect(page.locator('text=Delete Product')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Delete Product')).not.toBeVisible({ timeout: 10000 });
     
-    // Wait for page to refresh/update
+    // Wait for page to refresh
     await page.waitForTimeout(2000);
     
-    // Verify the product is removed - check if title is gone or count decreased
-    if (productTitle) {
-      // Check if the product title is no longer visible (more reliable than count)
-      const titleStillVisible = await page.locator(`text=${productTitle}`).first().isVisible().catch(() => false);
-      if (initialCount > 1) {
-        // If there are other products, the title should be gone
-        expect(titleStillVisible).toBe(false);
-      } else {
-        // If it was the only product, check for empty state message
-        await expect(page.locator('text=No products found')).toBeVisible({ timeout: 5000 });
-      }
-    }
+    // Verify the product is removed
+    await expect(page.locator(`text=${productTitle}`).first()).not.toBeVisible({ timeout: 10000 });
   });
 
   test('should search for products', async ({ page }) => {

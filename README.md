@@ -72,10 +72,42 @@ product_catalog/
 └── README.md
 ```
 
+## Testing
+
+### Unit Tests
+Run backend unit tests:
+```bash
+cd backend
+npm test
+```
+
+### E2E Tests
+Run Playwright end-to-end tests:
+```bash
+npm run test:e2e
+```
+
+### All Tests
+Run both unit and E2E tests:
+```bash
+npm run test:all
+```
+
+## CI/CD
+
+GitHub Actions workflow is configured to run tests on push and pull requests. The workflow:
+- Runs backend unit tests
+- Builds both frontend and backend
+- Runs Playwright E2E tests
+- Uploads test reports as artifacts
+
 ## Features
 
-- Add products via API
-- Simple, clean UI with header
+- Add, edit, and delete products via API
+- Search products by name or description
+- Pagination (30 products per page)
+- Low stock indicator for products with stock < 10
 - Type-safe TypeScript throughout
 - SQLite database with automatic schema initialization
+- Full test coverage (unit + E2E)
 
