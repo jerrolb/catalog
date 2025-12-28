@@ -34,6 +34,7 @@ npm install
 
 From the root directory:
 ```bash
+npm install
 npm run dev
 ```
 
@@ -53,61 +54,32 @@ npm run dev
 
 3. Open your browser and navigate to `http://localhost:5173`
 
-## Project Structure
-
-```
-product_catalog/
-├── backend/          # Hono API server
-│   ├── src/
-│   │   ├── db/      # Database setup and schema
-│   │   ├── routes/  # API route handlers
-│   │   └── index.ts # Server entry point
-│   └── package.json
-├── frontend/         # React SPA
-│   ├── src/
-│   │   ├── api/     # API client
-│   │   ├── components/
-│   │   └── App.tsx
-│   └── package.json
-└── README.md
-```
-
-## Testing
-
-### Unit Tests
-Run backend unit tests:
-```bash
-cd backend
-npm test
-```
-
-### E2E Tests
-Run Playwright end-to-end tests:
-```bash
-npm run test:e2e
-```
-
-### All Tests
-Run both unit and E2E tests:
-```bash
-npm run test:all
-```
-
-## CI/CD
-
-GitHub Actions workflow is configured to run tests on push and pull requests. The workflow:
-- Runs backend unit tests
-- Builds both frontend and backend
-- Runs Playwright E2E tests
-- Uploads test reports as artifacts
-
 ## Features
 
 - Add, edit, and delete products via API
 - Search products by name or description
 - Pagination (30 products per page)
-- Low stock indicator for products with stock < 10
+- BONUS: Low stock indicator for products with stock < 10
+
 - Type-safe TypeScript throughout
 - SQLite database with automatic schema initialization
 - Full test coverage (unit + E2E)
 
+## TODO
+
+- Toaster notifications
+- Improved form validation
+- More compact/sleek layout
+- Auth
+
+## Assumptions
+
+- This is an internal management tool (customer should not have rights to "Add Product" functionality)
+- It is better UX to show a modal overlay than to redirect to a dedicated product url
+- Single organization does not need horizontal database scaling for internal inventory management, making SQLite a great database for this use case
+
+## Open Questions
+
+- Would the app allow for customer, employee, manager user types with appropriate permissions?
+- Will the catalog simply become it's own route inside of a larger organization's website?
+- What is the standardized design library to prevent inconsistencies as developers are onboarded?
